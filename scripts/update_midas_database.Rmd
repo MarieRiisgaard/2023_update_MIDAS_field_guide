@@ -5,33 +5,36 @@
 # Load packages
 pacman::p_load(dplyr, readxl, openxlsx, tidyverse)
 
-
+# My working directory
 WD = "C:/Users/HD95LP/OneDrive - Aalborg Universitet/visual_studio_code/2023_update_MIDAS_field_guide"
-
-
-
-
 
 ```
 
 
 ## One pipeline: 
 
-- Runs against the current MIDAS database to catch names not prevoisly described
+- Runs against the current MIDAS database to catch names not previously described
 
 # Update after new version of the MIDAS database: 
 
 **Inputs:** 
 
 - The downloaded webpage formatted excel file generated after last upload
-- The taxomony file of the new MIDAS version
+- The taxonomy file of the new MIDAS version
 - Change log file with the columns (tab-separted, the columns: "Before"	"After"	"Change"	"Reference (if any)"
 - changes_tab_file: file with manually made changes
 
 **Output:**
 
-- New version of the webpage formatted excel file filtered down to only thos bacteria that are updated / added
+- New version of the webpage formatted excel file filtered down to only those bacteria that are updated / added
 - Sheet 1: refs not updated so far
+
+
+# Separate workflow (see last codeblock)
+  Also possible to output all the current info about a microbe in the database
+  Only requires the most recent excel from the webpage
+
+
 
 
 ```{r}
@@ -41,15 +44,16 @@ WD = "C:/Users/HD95LP/OneDrive - Aalborg Universitet/visual_studio_code/2023_upd
 ############################################
 
 # Input: Newest excel (webpage format) from Marta
-input_excel_file_from_Marta = paste0(WD, "/data/excel_from_Marta/20240614_microbe_details_v2.xlsx")
+input_excel_file_from_Marta = paste0(WD, "/data/excel_from_Marta/microbe_details_2025-08-15.xlsx")
 # Input file with manual changes:
-input_change_file_manual = paste0(WD, "/data/changes_tab_file/20240614_changes_v2.xlsx") 
+input_change_file_manual = paste0(WD, "/data/changes_tab_file/20250414_changes_tab_file.xlsx") 
+
+
 
 # Input: Change log with new names
 input_MIDAS_change_log_file = paste0(WD, "/data/MIDAS_change_log/MIDAS_changelog_53.txt")
 # Input: Newest version Midas database 
 midas_db_tax_file = paste0(WD, "/../data_microbial_groups/MiDAS/MIDAS_53_taxa.txt")
-
 
 
 ############################################
@@ -72,10 +76,9 @@ output_merged_changes_tab = paste0(WD, "/output/merged_changes_tab_file/20240301
 ############################################
 
 # Output: Final excel to upload:
-output_excel_file = paste0(WD, "/output/edits_in_excel/", format(Sys.Date(), "%Y%m%d"), "_microbe_details_update_midas53.xlsx")
+output_excel_file = paste0(WD, "/output/edits_in_excel/", format(Sys.Date(), "%Y%m%d"), "_microbe_details_update_midas53_v2.xlsx")
 
 ```
-
 
 
 ### Update the webpage formatted excelfile with all new names
@@ -164,7 +167,10 @@ input_change_file_x = output_merged_changes_tab
 
 
 # No new names 
+#input_excel_file_from_Marta = paste0(WD, "/data/excel_from_Marta/20240903_microbe_details.xlsx")
 output_excel_file_all_names <- input_excel_file_from_Marta
+
+
 
 
 source(paste0(WD, "/scripts/select_rows_and_create_excel_with_changes.R"))
@@ -180,22 +186,25 @@ make_new_excel(
 ```
 
 
-#### Find the old info for a group of bacteria 
+# Separate workflow: Find the old info for a bacteria 
 
 ```{r}
+
 
 WD = "C:/Users/HD95LP/OneDrive - Aalborg Universitet/visual_studio_code/2023_update_MIDAS_field_guide"
 
 
 # Input: Newest excel (webpage format) from Marta
+  # The most resent excel file downloaded from the database
+  input_excel_file_from_Marta = paste0(WD, "/data/excel_from_Marta/microbe_details_2025-08-15.xlsx")
+
 
 # Output 
-output_excel_file <- paste0(WD, "/output/get_old_data_to_use_for_manual_changes/20240417_FISH_probes.xlsx")
-output_excel_file <- paste0(WD, "/output/get_old_data_to_use_for_manual_changes/20240614_Propionivibrio.xlsx")
-
-
-
-input_excel_file_from_Marta = paste0(WD, "/data/excel_from_Marta/20240614_microbe_details_v2.xlsx")
+  # output_excel_file <- paste0(WD, "/output/get_old_data_to_use_for_manual_changes/20240417_FISH_probes.xlsx")
+  # output_excel_file <- paste0(WD, "/output/get_old_data_to_use_for_manual_changes/20240614_Sarcinithrix.xlsx")
+  # output_excel_file <- paste0(WD, "/output/get_old_data_to_use_for_manual_changes/20241015_Turicibacter.xlsx")
+  # output_excel_file <- paste0(WD, "/output/get_old_data_to_use_for_manual_changes/20241107_proxi.xlsx")
+  # output_excel_file <- paste0(WD, "/output/get_old_data_to_use_for_manual_changes/20241107_rhoferax.xlsx")
 
 
 # Read all sheets into a list of data frames
@@ -204,28 +213,41 @@ all_sheets <- lapply(excel_sheets(paste0(input_excel_file_from_Marta)), function
 })
 
 
-# Names 
-# names <- read_excel(paste0(WD, "/data/functional_data/20240207_functional groups_MiDAS5.2.xlsx")) %>% 
-#   rename("name" = 1)
-names <- 
-  #tibble(name = c("Acidovorax", "Giesbergeria"))
-  tibble(name = c("Propionivibrio"))
+# Names: Define the names of which to extract
+names <- tibble(name = c(
+  "Nannocystis", "Polyangium", 
+  "Novosphingobium", "Sphingobium", "Sphingorhabdus", "Sphingopyxis", "Sphingomonas", "Shinella",
+  "Thauera", "Zoogloea", "Bradyrhizobium", "Hyphomicrobium", "Rhodobacter",
+  "Haliangium", "Vulgatibacter", "Anaeromyxobacter", "Blautia", "Ca Alysiosphaera",
+  "Kouleothrix", "Sphaerotilus", "Ca Amarolinea", "Ca Accumulibacter", "Leptothrix",
+  "Anaerolinea", "Leptolinea", "Flexilinea", "Methanothrix", "Methanobrevibacter",
+  "Nitrospira", "Nitrotoga", "Ca Microthrix", "Streptococcus", "Ca Bipolaricaulis",
+  "Azonexus", "Acidovorax", "Smithella", "Methanolinea", "Methanosarcina",
+  "Tetrasphaera", "Thermomonas", "Thermovirga", "Micropruina", "Microlunatus",
+  "Trichococcus", "Ca Proximibacter", "Paracoccus", "Methanothermobacter", "Ferribacterium",
+  "Geobacter", "Defluviicoccus", "Propionivibrio", "Ca Brevefilum", "Geothrix",
+  "Ca Phosphoribacter", "Azoarcus", "Rhodoferax", "Methanoculleus", "Comamonas",
+  "Propioniciclava", "Haliscomenobacter", "Sedimentibacter", "Ca Villigracilis", "Ca Competibacter",
+  "Ca Opimibacter", "OLB13", "Ca Brachybacter", "Ca Parvibacillus", "Nitrosomonas", "Nitrosospira", 
+  "Gordonia", "Turicibacter", "Pelotomaculum", "Skermania", "Ca_Epiflobacter", "Herbinix", "Ca Cloacimonas", "Neomegalonema", "P3OB-42", "KD-3-10"
+)
+)
 
+distinct(names)
+length(names$name)
 
-
-# Function 
+# Function:  Get all the info from each sheet in the excel
 index = c(1:5)
 find_old_info_make_long_format <- function(sheet_index = 2) {
   
   exist <- all_sheets[[sheet_index]] %>% 
-    filter(name %in% unique(names$name)) %>%  
+    filter(name %in% unique(names$name)) %>%    # If this line is removed all bacteria are included
     pivot_longer(cols = -name, names_to = "column_name_for_change", values_to = "new_value") 
-  # %>% 
-  #   filter(!is.na(new_value))
-  #   
+  
   return(exist)
 }
 
+# Apply the function: 
 take_old_info <- 
   rbind(
     find_old_info_make_long_format(sheet_index = 2), 
@@ -234,22 +256,51 @@ take_old_info <-
     find_old_info_make_long_format(sheet_index = 5)
     ) %>% 
   #filter(new_value != "In situ=na||Other=na") %>% 
-  #filter(column_name_for_change == "FISH probes") %>%
+  #filter(column_name_for_change == "FISH probes") %>%    # If this is included eg. all fish probes are extracted
   #filter(column_name_for_change == "Description") %>% 
+  #arrange(new_value)
   arrange(name)
 
-# Create a new Excel workbook
-output_wb <- createWorkbook()
+###############################################################################
+### Manual version - save one excel 
+###############################################################################
 
-# Add a worksheet to the new Excel workbook
-addWorksheet(output_wb, sheetName = "change_file")
+  output_excel_file <- "NAME_YOUR_EXCEL"
+  # Create a new Excel workbook
+  output_wb <- createWorkbook()
+  # Add a worksheet to the new Excel workbook
+  addWorksheet(output_wb, sheetName = "change_file")
+  # Write the filtered data to the new worksheet
+  writeData(output_wb, x = take_old_info, sheet = "change_file")
+  openxlsx::saveWorkbook(output_wb, output_excel_file)
 
-# Write the filtered data to the new worksheet
-writeData(output_wb, x = take_old_info, sheet = "change_file")
 
-openxlsx::saveWorkbook(output_wb, output_excel_file)
+###############################################################################
+### Automatic version - Save each taxa as seperate file
+###############################################################################
 
+take_old_info_apply_version <- function(tax = names$name[1]){
 
+  # subset to only one taxa
+  take_old_info_sub <- 
+    take_old_info %>% 
+    filter(name == tax)
+  # Create a new Excel workbook
+  output_wb <- createWorkbook()
+  # Add a worksheet to the new Excel workbook
+  addWorksheet(output_wb, sheetName = "change_file")
+  # Write the filtered data to the new worksheet
+  writeData(output_wb, x = take_old_info_sub, sheet = "change_file")
+  # Generate the output Excel file path
+  output_excel_file <- 
+    paste0(WD, "/output/get_old_data_to_use_for_manual_changes/20250911_PHN_meeting/",   # <- change the output folder 
+           format(Sys.Date(), "%Y%m%d"), "_", 
+           str_replace(tax, " ", "_"), ".xlsx")
+  # Save the workbook
+  openxlsx::saveWorkbook(output_wb, output_excel_file)
+}
+
+lapply(names$name, take_old_info_apply_version)
 
 
 ```
