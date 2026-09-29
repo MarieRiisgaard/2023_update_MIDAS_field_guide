@@ -2,8 +2,6 @@
 # Update the MiDAS database descriptions
 
 
-
-
 ```{r}
 
 # Load packages
