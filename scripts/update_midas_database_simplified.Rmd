@@ -48,114 +48,16 @@ WD = "C:/Users/HD95LP/OneDrive - Aalborg Universitet/visual_studio_code/2023_upd
 ############################################
 
 # Input: Newest excel (webpage format) from Marta
-input_excel_file_from_Marta = paste0(WD, "/data/excel_from_Marta/2026-06-26_microbe_details.xlsx")
+input_excel_file_from_Marta = paste0(WD, "/data/excel_from_Marta/2026-06-29_microbe_details.xlsx")
 # Input file with manual changes:
-input_change_file_manual = paste0(WD, "/data/changes_tab_file/20260501_changestab_file.xlsx") 
-
-
-
-# Input: Change log with new names
-input_MIDAS_change_log_file = paste0(WD, "/data/MIDAS_change_log/MIDAS_changelog_53.txt")
-# Input: Newest version Midas database 
-midas_db_tax_file = paste0(WD, "/../data_microbial_groups/MiDAS/MIDAS_53_taxa.txt")
-
-
-############################################
-####           INTERMEDIATES            ####
-############################################
-
-# Output: Excel with new names  
-output_excel_file_all_names = paste0(WD, "/output/include_all_names/MIDAS_53_excel_web_format.xlsx")
-
-
-# Output (intermediate); changes tab file with the info from old names 
-output_change_file_old_info = paste0(WD, "/output/changes_tab_file/20240301_MIDASv52_data_from_old_tax_names.xlsx")  
-
-# Output: File with merged manual changes (manual + those from old names) 
-output_merged_changes_tab = paste0(WD, "/output/merged_changes_tab_file/20240301_merged_changes_tab_file_v2.xlsx")
-
+input_change_file_manual = paste0(WD, "/data/changes_tab_file/20260629_changestab_file.xlsx") 
 
 ############################################
 ####           FINAL OUTPUT             ####
 ############################################
 
 # Output: Final excel to upload:
-output_excel_file = paste0(WD, "/output/edits_in_excel/", format(Sys.Date(), "%Y%m%d"), "_microbe_details_update_midas53.xlsx")
-
-```
-
-
-### Update the webpage formatted excelfile with all new names
-
-Do you need to add descriptions for new genera or species without any info in the database? 
-
-  - Could be in case of a new database version
-  - Add description of a species 
-    
-If not: Skip this    
-
-```{r}
-
-source(paste0(WD, "/scripts/get_all_new_names.R"))
-
-missing_names(WD = WD, 
-              # Input: Newest excel (webpage format) from Marta
-              input_excel_file = input_excel_file_from_Marta,
-              # Input:Newest version Midas database 
-              midas_db = midas_db_tax_file, 
-              # Output: Excel with new names  
-              output_excel_file = output_excel_file_all_names
-              )
-
-```
-
-
-### Get info from old names transfered to the new names
-
-Name change: Do you need to add old information to a new taxonomy?
-
-  - Could be in case of a new database version
-  - Name update 
-    
-If not: Skip this  
-
-
-```{r}
-
-source(paste0(WD, "/scripts/update_names_but_retain_old_data.R"))
-
-get_old_info(
-    WD = WD, 
-    # Input: Excel file WITH ALL names from new database
-    input_excel_file = output_excel_file_all_names,
-    # Input: Change log with new names
-    input_MIDAS_change_log = input_MIDAS_change_log_file, 
-    # Output: Tab changes file
-    output_excel_file = output_change_file_old_info, old_midas_version = "MiDAS 5.1"
-    )
-
-### Load new changes with manual created changes_tab_file and merge with the old info
-
-change_file_old_info <- read_excel(output_change_file_old_info) %>% 
-  rename("value_from_old_name" = "new_value")
-change_file_new_manual_info <- read_excel(input_change_file_manual) 
-
-# Merged change files and when values are dublicated keep only new 
-merged_change_file <- full_join(change_file_old_info, change_file_new_manual_info) %>% 
-  mutate(new_value = ifelse(is.na(new_value), value_from_old_name, new_value)) %>% 
-  distinct(genus_name, column_name_for_change, new_value) 
-
-# Save to new merged change file: 
-
-  ##Create a new Excel workbook
-  output_wb <- createWorkbook()
-  # Add a worksheet to the new Excel workbook
-  addWorksheet(output_wb, sheetName = "Sheet1")
-  # Write the filtered data to the new worksheet
-  writeData(output_wb, sheet = "Sheet1", merged_change_file)
-
-# Save the new Excel workbook
-saveWorkbook(output_wb, output_merged_changes_tab)
+output_excel_file = paste0(WD, "/output/edits_in_excel/", format(Sys.Date(), "%Y%m%d"), "", "_microbe_details_update_midas53.xlsx")
 
 ```
 
@@ -164,24 +66,12 @@ saveWorkbook(output_wb, output_merged_changes_tab)
 
 ```{r}
 
-## If NO old was taken - thus no reason to merge change files : 
-input_change_file_x = input_change_file_manual
-## If old WAS USED - thus merge change files : 
-input_change_file_x = output_merged_changes_tab
-
-
-# No new names 
-#input_excel_file_from_Marta = paste0(WD, "/data/excel_from_Marta/20240903_microbe_details.xlsx")
-output_excel_file_all_names <- input_excel_file_from_Marta
-
-
-
 
 source(paste0(WD, "/scripts/select_rows_and_create_excel_with_changes.R"))
 
 make_new_excel(
-  input_excel_file = output_excel_file_all_names,
-  input_change_file = input_change_file_x,
+  input_excel_file = input_excel_file_from_Marta,
+  input_change_file = input_change_file_manual,
   output_excel_file = output_excel_file
 )
 
@@ -189,7 +79,7 @@ make_new_excel(
 
 ```
 
-### Check generated excel for In situ spelling
+### Check generated excel for In situ spelling and empty rows
 
 ```{r}
 
@@ -199,6 +89,7 @@ output_excel_file
 # valid pattern
 valid_regex <- "^In situ=(na|pos|neg|var)(\\[(PMID:[0-9]+|REPLACE[0-9]+)\\])*\\|\\|Other=(na|pos|neg|var)?(\\[(PMID:[0-9]+|REPLACE[0-9]+)\\])*$"
 
+# Check for errors in reference (e.g spaces, ... )
 
 check_sheet <- function(sheet) {
   output <- read_excel(output_excel_file, sheet = sheet)
@@ -224,6 +115,228 @@ invalid_all %>% print(n=100)
 
 ```
 
+### Find reference issues (spaces etc. )
+
+```{r}
+
+# output_excel_file = "C:/Users/HD95LP/OneDrive - Aalborg Universitet/visual_studio_code/2023_update_MIDAS_field_guide/output/edits_in_excel/20260629_microbe_details_update_midas53.xlsx"
+# output <- read_excel(output_excel_file, sheet = 2)
+# output <- read_excel(output_excel_file, sheet = 3)
+
+
+# Sheets that should be checked
+sheets_to_check <- c(
+  general_information = 2,
+  descriptions = 3
+)
+
+valid_reference_pattern <- "\\[(?:PMID:[0-9]+|REPLACE[0-9]+)\\]"
+
+# Non-reference tags that are intentionally used elsewhere in the workbook.
+# Adjust this list if you have additional valid MiDAS tags.
+allowed_tag_names <- c(
+  "DESC",
+  "PATTERN",
+  "NCBI",
+  "PATH"
+)
+
+allowed_nonreference_pattern <- paste0(
+  "\\[(?:",
+  paste(allowed_tag_names, collapse = "|"),
+  ")(?::[^\\]]*)?\\]"
+)
+
+# Read both sheets and convert all cells to a long table
+reference_cells <- imap_dfr(
+  sheets_to_check,
+  function(sheet_number, sheet_name) {
+
+    read_excel(
+      output_excel_file,
+      sheet = sheet_number
+    ) %>%
+      mutate(
+        across(everything(), as.character),
+        excel_row = row_number() + 1L
+      ) %>%
+      pivot_longer(
+        cols = -c(excel_row, name),
+        names_to = "column",
+        values_to = "text"
+      ) %>%
+      transmute(
+        sheet = sheet_name,
+        excel_row,
+        name,
+        column,
+        text
+      ) %>%
+      filter(
+        !is.na(text),
+        str_detect(
+          text,
+          regex("PMID|REPLACE", ignore_case = TRUE)
+        )
+      )
+  }
+)
+
+# -------------------------------------------------------------------------
+# 1. Complete [...] expressions that are neither valid references nor
+#    explicitly permitted MiDAS metadata tags
+# -------------------------------------------------------------------------
+
+bracket_problems <- reference_cells %>%
+  mutate(
+    remaining_text = text %>%
+      str_remove_all(valid_reference_pattern) %>%
+      str_remove_all(allowed_nonreference_pattern),
+
+    problem_fragment = str_extract_all(
+      remaining_text,
+      "\\[[^\\]]*\\]"
+    )
+  ) %>%
+  select(
+    sheet,
+    excel_row,
+    name,
+    column,
+    text,
+    problem_fragment
+  ) %>%
+  unnest_longer(problem_fragment) %>%
+  filter(
+    !is.na(problem_fragment),
+    problem_fragment != ""
+  ) %>%
+  mutate(
+    issue = case_when(
+      str_detect(
+        problem_fragment,
+        regex("^\\[\\s*PMID", ignore_case = TRUE)
+      ) ~ "Malformed PMID tag",
+
+      str_detect(
+        problem_fragment,
+        regex("^\\[\\s*REPLACE", ignore_case = TRUE)
+      ) ~ "Malformed REPLACE tag",
+
+      TRUE ~ "Unsupported square-bracket expression"
+    )
+  )
+
+
+# -------------------------------------------------------------------------
+# 2. Reference-like text outside complete square brackets
+#    Examples:
+#      PMID:24173461
+#      [PMID:24173461
+#      REPLACE52
+# -------------------------------------------------------------------------
+
+unbracketed_reference_problems <- reference_cells %>%
+  mutate(
+    remaining_text = text %>%
+      str_remove_all(valid_reference_pattern) %>%
+      str_remove_all(allowed_nonreference_pattern) %>%
+      str_remove_all("\\[[^\\]]*\\]"),
+
+    problem_fragment = str_extract_all(
+      remaining_text,
+      regex(
+        "(?:PMID|REPLACE)[^\\s<]{0,30}",
+        ignore_case = TRUE
+      )
+    )
+  ) %>%
+  select(
+    sheet,
+    excel_row,
+    name,
+    column,
+    text,
+    problem_fragment
+  ) %>%
+  unnest_longer(problem_fragment) %>%
+  filter(
+    !is.na(problem_fragment),
+    problem_fragment != ""
+  ) %>%
+  mutate(
+    issue = case_when(
+      str_detect(
+        problem_fragment,
+        regex("PMID", ignore_case = TRUE)
+      ) ~ "PMID reference outside valid brackets",
+
+      str_detect(
+        problem_fragment,
+        regex("REPLACE", ignore_case = TRUE)
+      ) ~ "REPLACE reference outside valid brackets",
+
+      TRUE ~ "Malformed reference"
+    )
+  )
+
+
+# -------------------------------------------------------------------------
+# 3. Cells with unequal numbers of opening and closing square brackets
+# -------------------------------------------------------------------------
+
+unbalanced_bracket_problems <- reference_cells %>%
+  filter(
+    str_count(text, fixed("[")) !=
+      str_count(text, fixed("]"))
+  ) %>%
+  transmute(
+    sheet,
+    excel_row,
+    name,
+    column,
+    text,
+    problem_fragment = NA_character_,
+    issue = "Unbalanced square brackets"
+  )
+
+
+# -------------------------------------------------------------------------
+# Combined report
+# -------------------------------------------------------------------------
+
+reference_problems <- bind_rows(
+  bracket_problems,
+  unbracketed_reference_problems,
+  unbalanced_bracket_problems
+) %>%
+  distinct(
+    sheet,
+    excel_row,
+    name,
+    column,
+    issue,
+    problem_fragment,
+    .keep_all = TRUE
+  ) %>%
+  select(
+    sheet,
+    excel_row,
+    name,
+    column,
+    issue,
+    problem_fragment,
+    text
+  ) %>%
+  arrange(
+    sheet,
+    excel_row,
+    column
+  )
+
+reference_problems
+
+```
 
 
 
